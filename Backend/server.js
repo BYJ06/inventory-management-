@@ -17,7 +17,7 @@ app.get('/products', (req, res) => {
   });
 });
 
-// Add a product
+// Add a product.
 app.post('/products', (req, res) => {
   const { name, price, quantity } = req.body;
 
@@ -41,10 +41,13 @@ app.put('/products/:id', (req, res) => {
   db.query(
     'UPDATE products SET name = ?, price = ?, quantity = ? WHERE id = ?',
     [name, price, quantity, req.params.id],
-    (err) => {
+    (err, result) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ error: 'Database error' });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Product not found' });
       }
       res.json({ id: Number(req.params.id), name, price, quantity });
     }
@@ -53,10 +56,13 @@ app.put('/products/:id', (req, res) => {
 
 // Delete a product
 app.delete('/products/:id', (req, res) => {
-  db.query('DELETE FROM products WHERE id = ?', [req.params.id], (err) => {
+  db.query('DELETE FROM products WHERE id = ?', [req.params.id], (err, result) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ error: 'Database error' });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Product not found' });
     }
     res.json({ success: true });
   });
