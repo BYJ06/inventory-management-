@@ -1,89 +1,27 @@
 const express = require('express');
 const cors = require('cors');
-const db = require('./database');
+const db = require('./config/database');
+const productRoutes = require('./routes/productRoutes');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use('/products', productRoutes);
 
 // Get all products
-app.get('/products', (req, res) => {
-  db.query('SELECT * FROM products', (err, rows) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    res.json(rows);
-  });
-});
-function Validateproduct(req, res, next) {
-  const { name, price, quantity } = req.body;
-
-  if (!name || price<0 || quantity<0) {
-    return res.status(400).json({ error: 'Invalid product data' });
-  }
-
-  if (typeof price !== 'number' || price <= 0) {
-    return res.status(400).json({ error: 'Invalid price' });
-  }
-
-  if (typeof quantity !== 'number' || quantity < 0) {
-    return res.status(400).json({ error: 'Invalid quantity' });
-  }
-
-  next();
-}
+// This route is now handled by the productRoutes
 
 // Add a product.
-app.post('/products', Validateproduct, (req, res) => {
-  const { name, price, quantity } = req.body;
-
-  db.query(
-    'INSERT INTO products (name, price, quantity) VALUES (?, ?, ?)',
-    [name, price, quantity],
-    (err, result) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      res.status(201).json({ id: result.insertId, name, price, quantity });
-    }
-  );
-});
 
 // Update a product
-app.put('/products/:id', (req, res) => {
-  const { name, price, quantity } = req.body;
-
-  db.query(
-    'UPDATE products SET name = ?, price = ?, quantity = ? WHERE id = ?',
-    [name, price, quantity, req.params.id],
-    (err, result) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: 'Product not found' });
-      }
-      res.json({ id: Number(req.params.id), name, price, quantity });
-    }
-  );
-});
-
 // Delete a product
-app.delete('/products/:id', (req, res) => {
-  db.query('DELETE FROM products WHERE id = ?', [req.params.id], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    res.json({ success: true });
-  });
-});
+app.use((err,req,res,next)=>
+{
+  console.error(err.stack)
+  res.status(500).json({
+    message:"Internalserver error"
+  })
+})
 
 const PORT = 3000;
 app.listen(PORT, () => {
