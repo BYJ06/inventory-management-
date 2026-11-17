@@ -16,9 +16,26 @@ app.get('/products', (req, res) => {
     res.json(rows);
   });
 });
+function Validateproduct(req, res, next) {
+  const { name, price, quantity } = req.body;
+
+  if (!name || price<0 || quantity<0) {
+    return res.status(400).json({ error: 'Invalid product data' });
+  }
+
+  if (typeof price !== 'number' || price <= 0) {
+    return res.status(400).json({ error: 'Invalid price' });
+  }
+
+  if (typeof quantity !== 'number' || quantity < 0) {
+    return res.status(400).json({ error: 'Invalid quantity' });
+  }
+
+  next();
+}
 
 // Add a product.
-app.post('/products', (req, res) => {
+app.post('/products', Validateproduct, (req, res) => {
   const { name, price, quantity } = req.body;
 
   db.query(
