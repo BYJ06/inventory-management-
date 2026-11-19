@@ -18,14 +18,14 @@ app.use('/products', productRoutes);
 
 // Update a product
 // Delete a product
-app.use((err,req,res,next)=>
-{
-  console.error(err.stack)
-  res.status(500).json({
-    message:"Internalserver error"
-  })
-})
+app.use((err, req, res, next) => {
+    console.error(err);
 
+    res.status(500).json({
+        success: false,
+        message: "Internal server error"
+    });
+});
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
