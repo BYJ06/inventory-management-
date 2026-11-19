@@ -1,18 +1,26 @@
 function Validateproduct(req, res, next) {
   const { name, price, quantity } = req.body;
+if (!name || typeof name !== "string" || name.trim() === "") {
+    return res.status(400).json({
+        error: "Product name is required"
+    });
+}
 
-  if (!name || price<0 || quantity<0) {
-    return res.status(400).json({ error: 'Invalid product data' });
-  }
+ if (typeof price !== "number" || !Number.isFinite(price) || price <= 0) {
+    return res.status(400).json({
+        error: "Price must be a valid number greater than zero"
+    });
+}
 
-  if (typeof price !== 'number' || price <= 0) {
-    return res.status(400).json({ error: 'Invalid price' });
-  }
-
-  if (typeof quantity !== 'number' || quantity < 0) {
-    return res.status(400).json({ error: 'Invalid quantity' });
-  }
-
+if (
+    typeof quantity !== "number" ||
+    !Number.isInteger(quantity) ||
+    quantity < 0
+) {
+    return res.status(400).json({
+        error: "Quantity must be a non-negative integer"
+    });
+}
   next();
 }
 module.exports = Validateproduct;
