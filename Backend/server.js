@@ -7,8 +7,9 @@ const authRoutes = require('./routes/authRoutes');
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use('/products', productRoutes);
 app.use('/auth', authRoutes);
+app.use('/products', productRoutes);
+
 
 // Get all products
 // This route is now handled by the productRoutes
