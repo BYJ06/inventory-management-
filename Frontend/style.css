@@ -154,4 +154,6 @@ main{
             font-size: 22px;
         }  
 }
-
+#dashboard{
+    display: none;
+}

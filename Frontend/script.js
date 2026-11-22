@@ -1,5 +1,17 @@
 const API_URL = "http://localhost:3000/products";
-
+const AUTH_URL="http://localhost:3000/auth"
+let authToken=null
+function getAuthHeader() {
+    return{
+        "content-type":"application/json",
+        "Authorization":`Bearer ${authToken}`
+    }
+}
+const loginForm=document.getElementById("login-form")
+const loginMessage=document.getElementById("login-message")
+const loginSection=document.getElementById("login-section")
+const logoutBtn=document.getElementById("logout-btn")
+const dashboard=document.getElementById("dashboard")
 let products = [];
 
 const productForm = document.getElementById("product-form");
@@ -72,7 +84,9 @@ function renderProducts(list = products) {
 // ---------- Load from server ----------
 async function loadProducts() {
     try {
-        const response = await fetch(API_URL);
+        const response = await fetch(API_URL,{
+            headers:getAuthHeader()
+        });
         if (!response.ok) throw new Error("Failed to load products.");
 
         const data = await response.json();
@@ -99,7 +113,8 @@ async function deleteProduct(productId) {
 
     try {
         const response = await fetch(`${API_URL}/${productId}`, {
-            method: "DELETE"
+            method: "DELETE",
+            headers: getAuthHeader()
         });
         if (!response.ok) throw new Error("Delete failed.");
 
@@ -145,7 +160,7 @@ async function editProduct(productId) {
     try {
         const response = await fetch(`${API_URL}/${productId}`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: getAuthHeader(),
             body: JSON.stringify({ name, price, quantity })
         });
         if (!response.ok) throw new Error("Update failed.");
@@ -205,7 +220,7 @@ productForm.addEventListener("submit", async event => {
     try {
         const response = await fetch(API_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: getAuthHeader(),
             body: JSON.stringify({ name, price, quantity })
         });
 
@@ -231,6 +246,43 @@ productForm.addEventListener("submit", async event => {
         console.error("Error:", error.message);
     }
 });
+loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-// ---------- Start ----------
-loadProducts();
+    try {
+        const response = await fetch(AUTH_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
+
+        if (!response.ok) throw new Error("Invalid credentials.");
+
+        const data = await response.json();
+        authToken = data.token;
+
+        // Hide login section and show dashboard
+        loginSection.style.display = "none";
+        dashboard.style.display = "block";
+        loginMessage.textContent="Login successful!";
+        await loadProducts(); // Load products after successful login
+
+        // Load products after successful login
+        loadProducts();
+    } catch (error) {
+        loginMessage.textContent = "Invalid username or password.";
+        loginMessage.style.color = "red";
+        console.error("Error:", error.message);
+    }
+});
+logoutBtn.addEventListener("click", () => {
+    authToken = null;
+    dashboard.style.display = "none";
+    loginSection.style.display = "block";
+    loginForm.reset();
+    loginMessage.textContent = "You have been logged out.";
+    loginMessage.style.color = "black";
+});
+    loginSection.style.display = "block";
