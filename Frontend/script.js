@@ -1,6 +1,7 @@
 const API_URL = "http://localhost:3000/products";
 const AUTH_URL="http://localhost:3000/auth"
 let authToken=null
+let userRole=null
 function getAuthHeader() {
     return{
         "content-type":"application/json",
@@ -12,6 +13,7 @@ const loginMessage=document.getElementById("login-message")
 const loginSection=document.getElementById("login-section")
 const logoutBtn=document.getElementById("logout-btn")
 const dashboard=document.getElementById("dashboard")
+const productRegistration=document.getElementById("product-registration")
 let products = [];
 
 const productForm = document.getElementById("product-form");
@@ -72,22 +74,37 @@ function renderProducts(list = products) {
         editBtn.dataset.id = product.id;
         editBtn.style.cssText =
             "background-color:#007bff;color:white;border:none;padding:5px 10px;cursor:pointer;";
-
+            if(userRole==="admin"){
         actionsTd.appendChild(deleteBtn);
         actionsTd.appendChild(editBtn);
+            }
         row.appendChild(actionsTd);
 
         tableBody.appendChild(row);
     });
 }
-
+function handleSessionExpiration(){
+    authToken=null
+    userRole=null
+    dashboard.style.display="none"
+    loginSection.style.display="block"
+    loginForm.reset()
+    loginMessage.textContent="Your session has expired. PLease login again"
+}
 // ---------- Load from server ----------
 async function loadProducts() {
     try {
         const response = await fetch(API_URL,{
             headers:getAuthHeader()
         });
-        if (!response.ok) throw new Error("Failed to load products.");
+       if (response.status === 401 || response.status === 403) {
+        handleSessionExpiration()
+    return;
+}
+
+if (!response.ok) {
+    throw new Error("Failed to load products.");
+}
 
         const data = await response.json();
 
@@ -116,7 +133,14 @@ async function deleteProduct(productId) {
             method: "DELETE",
             headers: getAuthHeader()
         });
-        if (!response.ok) throw new Error("Delete failed.");
+       if (response.status === 401 || response.status === 403) {
+    handleSessionExpiration();
+    return;
+}
+
+if (!response.ok) {
+    throw new Error("Delete failed.");
+}
 
         products = products.filter(p => p.id !== productId);
         renderProducts();
@@ -163,7 +187,14 @@ async function editProduct(productId) {
             headers: getAuthHeader(),
             body: JSON.stringify({ name, price, quantity })
         });
-        if (!response.ok) throw new Error("Update failed.");
+        if (response.status === 401 || response.status === 403) {
+    handleSessionExpiration();
+    return;
+}
+
+if (!response.ok) {
+    throw new Error("Update failed.");
+}
 
         product.name = name;
         product.price = price;
@@ -246,6 +277,13 @@ productForm.addEventListener("submit", async event => {
         console.error("Error:", error.message);
     }
 });
+    document.getElementById("email").addEventListener("input",()=>
+    {
+        loginMessage.textContent="";
+    })
+    document.getElementById("password").addEventListener("input",()=>{
+        loginMessage.textContent="";
+    });
 loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const email = document.getElementById("email").value.trim();
@@ -262,15 +300,16 @@ loginForm.addEventListener("submit", async (event) => {
 
         const data = await response.json();
         authToken = data.token;
+         userRole=data.role
 
         // Hide login section and show dashboard
         loginSection.style.display = "none";
+        logoutBtn.style.display = "inline-block";
         dashboard.style.display = "block";
+        productRegistration.style.display=userRole === 'admin' ? 'block' : 'none';
         loginMessage.textContent="Login successful!";
         await loadProducts(); // Load products after successful login
 
-        // Load products after successful login
-        loadProducts();
     } catch (error) {
         loginMessage.textContent = "Invalid username or password.";
         loginMessage.style.color = "red";
@@ -279,6 +318,7 @@ loginForm.addEventListener("submit", async (event) => {
 });
 logoutBtn.addEventListener("click", () => {
     authToken = null;
+    userRole=null
     dashboard.style.display = "none";
     loginSection.style.display = "block";
     loginForm.reset();
