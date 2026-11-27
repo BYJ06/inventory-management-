@@ -14,6 +14,7 @@ const loginSection=document.getElementById("login-section")
 const logoutBtn=document.getElementById("logout-btn")
 const dashboard=document.getElementById("dashboard")
 const productRegistration=document.getElementById("product-registration")
+const welcomeMessage=document.getElementById("Welcome-message")
 let products = [];
 
 const productForm = document.getElementById("product-form");
@@ -102,10 +103,14 @@ async function loadProducts() {
     return;
 }
 
-if (!response.ok) {
-    throw new Error("Failed to load products.");
+if (response.status === 401 || response.status === 403) {
+    handleSessionExpiration();
+    return;
 }
 
+if (!response.ok) {
+    throw new Error("Failed to add product.");
+}
         const data = await response.json();
 
         // MySQL can return DECIMAL as a string, so convert to numbers
@@ -257,14 +262,7 @@ productForm.addEventListener("submit", async event => {
 
         if (!response.ok) throw new Error("Failed to add product.");
 
-        const newProduct = await response.json();
-
-        products.push({
-            ...newProduct,
-            price: Number(newProduct.price),
-            quantity: Number(newProduct.quantity)
-        });
-
+       await loadProducts()
         renderProducts();
         updateInventoryStats();
 
@@ -287,10 +285,10 @@ productForm.addEventListener("submit", async event => {
 loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
+    const password = document.getElementById("password").value;
 
     try {
-        const response = await fetch(AUTH_URL, {
+        const response = await fetch(`${AUTH_URL}/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password })
@@ -301,6 +299,7 @@ loginForm.addEventListener("submit", async (event) => {
         const data = await response.json();
         authToken = data.token;
          userRole=data.role
+         welcomeMessage.textContent=`${data.name}! (${data.name})`
 
         // Hide login section and show dashboard
         loginSection.style.display = "none";
@@ -319,6 +318,13 @@ loginForm.addEventListener("submit", async (event) => {
 logoutBtn.addEventListener("click", () => {
     authToken = null;
     userRole=null
+    products = [];
+tableBody.innerHTML = "";
+updateInventoryStats();
+productRegistration.style.display = "none";
+formMessage.textContent = "";
+welcomeMessage.textContent=""
+
     dashboard.style.display = "none";
     loginSection.style.display = "block";
     loginForm.reset();

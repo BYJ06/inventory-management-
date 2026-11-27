@@ -71,7 +71,7 @@ const loginUser = (req, res) => {
         { expiresIn: "1h" }
       );
 
-      res.status(200).json({ message: "Login successful", token, role: user.role });
+      res.status(200).json({ message: "Login successful", token, role: user.role,name:user.name });
     });
   });
 };
